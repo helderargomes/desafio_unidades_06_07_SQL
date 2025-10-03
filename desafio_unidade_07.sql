@@ -130,7 +130,16 @@ FROM
 --avaliação mais recente para a mais antiga, e, para cada avaliação, os nomes dos alunos
 --devem estar ordenados em ordem crescente. A porcentagem deve ter duas casas decimais.
 
-SELECT data, nota, nome, nota_obtida, ROUND(((nota_obtida / nota) * 100), 2) AS porcentagem
+SELECT 
+CONCAT((EXTRACT(DAY FROM data)), '/', 
+	   (
+		   CASE 
+		   WHEN EXTRACT(MONTH FROM data) < 10 THEN CONCAT('0', EXTRACT(MONTH FROM data))
+		   ELSE CAST((EXTRACT(MONTH FROM data)) AS TEXT)
+		   END
+	   ), '/', 
+	   EXTRACT(YEAR FROM data)) AS data,
+nota, nome, nota_obtida, ROUND(((nota_obtida / nota) * 100), 2) AS porcentagem
 FROM
 (
 	SELECT *
@@ -138,15 +147,10 @@ FROM
 	INNER JOIN tb_resultado ON tb_resultado.avaliacao_id = tb_avaliacao.id
 ) AS juncao_avaliacao_resultado
 INNER JOIN tb_aluno ON juncao_avaliacao_resultado.aluno_id = tb_aluno.cpf
-ORDER BY data DESC, nome
+ORDER BY (EXTRACT(YEAR FROM data), EXTRACT(MONTH FROM data), EXTRACT(DAY FROM data)) DESC, nome
 
 --QUESTÃO 4 : nome e nota total dos alunos da turma 10 
 --(ATENÇÃO: você deve restringir a turma pelo número 10 dela, e não pelo id 2).
-
-SELECT nome, SUM(nota_obtida) AS total
-FROM tb_aluno
-INNER JOIN tb_resultado ON tb_aluno.cpf = tb_resultado.aluno_id
-GROUP BY(nome)
 
 SELECT nome, SUM(nota_obtida) AS total
 FROM
@@ -158,9 +162,9 @@ FROM
 		FROM tb_aluno
 		INNER JOIN tb_resultado ON tb_aluno.cpf = tb_resultado.aluno_id
 	) AS juncao_resultado_aluno
-	INNER JOIN tb_matricula ON juncao_resultado_aluno.cpf = tb_matricula.aluno_id
-) AS juncao_resultado_aluno_matricula
-INNER JOIN tb_turma ON juncao_resultado_aluno_matricula.turma_id = tb_turma.id
+	INNER JOIN tb_avaliacao ON juncao_resultado_aluno.avaliacao_id = tb_avaliacao.id
+) AS juncao_resultado_aluno_avaliacao
+INNER JOIN tb_turma ON juncao_resultado_aluno_avaliacao.turma_id = tb_turma.id
 WHERE numero = 10
 GROUP BY(nome)
 
